@@ -7,6 +7,7 @@ clock_options = {-- 12, default
 
 old_tempo = 0
 playing = true
+selected_out = 1
 
 -- m = midi.connect()
 -- m.event = function(data)
@@ -85,25 +86,49 @@ end
 
 function redraw()
   screen.clear()
-  screen.level(15)
+  screen.level(5)
 
-  screen.move(17, 55)
+  screen.move(10, 30)
+  screen.font_size(25)
+  screen.text(get_tempo())
+
+  screen.move(17, 50)
   screen.font_size(8)
   transport = playing and "play" or "stop"
   screen.text(transport)
 
-  screen.move(10, 40)
-  screen.font_size(25)
-  screen.text(get_tempo())
+  screen.font_size(8)
+  for i=1, 4 do
+    local rate = clock_options[params:get("crowout"..i)]
+    if rate < 1 then rate = string.format("%.2f", rate) end
+
+    if i == selected_out then
+      screen.level(15)
+      screen.move(82, 10+i*10)
+      screen.text(">")
+    end
+
+    screen.move(90, 10+i*10)
+    screen.text(i)
+    screen.move(100, 10+i*10)
+    screen.text(rate)
+
+    screen.level(5)
+  end
 
   screen.update()
 end
 
 function enc(n, d)
-  if n == 1 then
-    params:delta("clock_tempo", d)
-    redraw()
+  if n == 2 then
+    selected_out = util.clamp(selected_out + d, 1, 4)
+  elseif n == 3 then
+    local i = selected_out
+    local new_value = util.clamp(params:get("crowout"..i) + d, 1, #clock_options)
+    params:set("crowout"..i, new_value)
   end
+
+  redraw()
 end
 
 function key(k, z)
